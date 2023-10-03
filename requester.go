@@ -359,6 +359,26 @@ type SelectHtml struct {
 	SelectsState string
 }
 
+func ScrollToBySelector(ctx context.Context, selector string) error {
+	var res string
+	if err := RunJsCrhomeDpRetry(ctx, fmt.Sprintf(`$("%s")[0].scrollIntoView()`, selector), &res); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func Type(ctx context.Context, selector, text string) error {
+	if err := ScrollToBySelector(ctx, selector); err != nil {
+		return errors.WithStack(err)
+	}
+	js := fmt.Sprintf("$('%s').val('%s').trigger('input').trigger('keyup').focus()", selector, text)
+	var res string
+	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Result, finalErr error) {
 	reuseContext := os.Getenv("REUSE_CHROME_CONTEXT") == "true"
 	t1 := time.Now()
