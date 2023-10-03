@@ -145,7 +145,7 @@ vals.join(";");`
 	l := logrus.WithField("js", js)
 	var res string
 	l.Tracef("running js: %+v", js)
-	if err1 := runJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
+	if err1 := RunJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
 		l.Errorf("%+v", err1)
 		return "", errors.Wrapf(err1, `for js: "%+v"`, js)
 	}
@@ -229,7 +229,7 @@ if (els.length) {
 	// l := logrus.WithField("js", js)
 	var ok string
 	// l.Tracef("running js: %+v", js)
-	if err1 := runJsCrhomeDpRetry(ctx, js, &ok); err1 != nil {
+	if err1 := RunJsCrhomeDpRetry(ctx, js, &ok); err1 != nil {
 		// l.Errorf("%+v", err1)
 		return false, errors.Wrapf(err1, `for js: "%+v", ctx: %+v`, js, ctx)
 	}
@@ -245,15 +245,15 @@ if (els.length) {
 
 const htmlIsNotChangedMessage = "Html is not yet changed"
 
-func runJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (finalErr error) {
-	logrus.Tracef("runJsCrhomeDpRetry state started")
+func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (finalErr error) {
+	logrus.Tracef("RunJsCrhomeDpRetry state started")
 	defer func() {
-		logrus.Tracef("runJsCrhomeDpRetry state finished")
+		logrus.Tracef("RunJsCrhomeDpRetry state finished")
 	}()
 	t1 := time.Now()
 	defer func() {
 		if finalErr != nil {
-			logrus.Warnf("time spent in runJsCrhomeDpRetry %+v with error: %+v", time.Since(t1), yinline.InlineErr(finalErr))
+			logrus.Warnf("time spent in RunJsCrhomeDpRetry %+v with error: %+v", time.Since(t1), yinline.InlineErr(finalErr))
 		}
 	}()
 	runJsCrhomeDpRetryTimeout := 5 * time.Minute
@@ -400,7 +400,7 @@ func iframeHtmlForNoIframe(ctx context.Context, iframeNumber int) (string, error
 	/*sl := 2 * time.Second
 	l.Tracef("running js with %+v sleep", sl)
 	time.Sleep(sl)*/
-	if err1 := runJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
+	if err1 := RunJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
 		return "", errors.Wrapf(err1, `for js: "%+v", time spent: %+v, ctx: %+v`, js, time.Since(t1), ctx)
 	}
 
@@ -543,7 +543,7 @@ iframes.length;`
 	l := logrus.WithField("js", js)
 	var res int
 	l.Tracef("running js")
-	if err1 := runJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
+	if err1 := RunJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
 		return 0, errors.Wrapf(err1, `for js: "%+v"`, js)
 	}
 	return res, nil
@@ -768,7 +768,7 @@ optionsVals;`, selectID)
 	l := logrus.WithField("js", js)
 	var res []string
 	l.Tracef("running js")
-	if err1 := runJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
+	if err1 := RunJsCrhomeDpRetry(ctx, js, &res); err1 != nil {
 		return nil, errors.Wrapf(err1, `for js: "%+v"`, js)
 	}
 	return res, nil
