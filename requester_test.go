@@ -2,14 +2,28 @@ package ybro
 
 import (
 	"github.com/stretchr/testify/require"
+	"github.com/ypapax/logrus_conf"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
 
+func TestMain(m *testing.M) {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	if err := logrus_conf.PrepareFromEnv("ybro_test"); err != nil {
+		log.Fatalf("error: %+v", err)
+	}
+	m.Run()
+}
+
 func TestHeadlessBrowser(t *testing.T) {
-	j := &Job{HeadlessBrowser: true, ShowBrowser: true, DontCloseBrowser: true, Url: "https://google.com"}
-	_, err := HeadlessBrowser(j, 30*time.Second)
 	r := require.New(t)
+	host := os.Getenv("WEEK_HOST")
+	r.NotEmpty(host)
+	j := &Job{HeadlessBrowser: true, ShowBrowser: true, DontCloseBrowser: true, Url: host}
+	_, err := HeadlessBrowser(j, 100*time.Second)
 	r.NoError(err)
-	r.NoError(Type(j.Ctx, "textarea", "hello world"))
+	r.NoError(Type(*j.Ctx, "#year-input", "hello world"))
+
 }

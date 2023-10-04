@@ -248,7 +248,7 @@ const htmlIsNotChangedMessage = "Html is not yet changed"
 func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (finalErr error) {
 	logrus.Tracef("RunJsCrhomeDpRetry state started")
 	defer func() {
-		logrus.Tracef("RunJsCrhomeDpRetry state finished")
+		logrus.Tracef("RunJsCrhomeDpRetry state finished, finalErr: %+v", finalErr)
 	}()
 	t1 := time.Now()
 	defer func() {
@@ -256,11 +256,13 @@ func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (final
 			logrus.Warnf("time spent in RunJsCrhomeDpRetry %+v with error: %+v", time.Since(t1), yinline.InlineErr(finalErr))
 		}
 	}()
-	runJsCrhomeDpRetryTimeout := 5 * time.Minute
-	ctx, cancel := GenerateTimeoutContextWithCancel(ctx0, runJsCrhomeDpRetryTimeout)
+	//runJsCrhomeDpRetryTimeout := 5 * time.Minute
+
+	/*ctx, cancel := GenerateTimeoutContextWithCancel(ctx0, runJsCrhomeDpRetryTimeout)
 	defer func() {
 		cancel()
-	}()
+	}()*/
+	ctx := ctx0
 	//fullUrl, err0 := getFullUrlChromeDP(ctx)
 	//if err0 != nil {
 	//	return errors.Wrapf(err0, "time spent in : %+v, timeout %+v", time.Since(t1), runJsCrhomeDpRetryTimeout)
@@ -277,6 +279,7 @@ func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (final
 		if err44 := chromedp.EvaluateAsDevTools(tryCatchJs, &res).Do(ctx); err44 != nil {
 			return errors.Wrapf(err44, `for js: "%+v" and fullUrl: %+v`, js, "")
 		}
+		logrus.Tracef("res result: %+v", res)
 		errorIsCatched := func() bool {
 			resStr, ok := res.(string)
 			if !ok {
@@ -291,7 +294,7 @@ func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (final
 			return errors.Errorf("error is catched: %+v", res)
 		}
 		return nil
-	}, 100*time.Millisecond, 30*time.Second); err1 != nil {
+	}, time.Second, 30*time.Second); err1 != nil {
 		screenshotFilePath, err := ChromeDPScreenshot(ctx)
 		if err != nil {
 			logrus.Errorf("screenshot error %+v", yinline.InlineErr(err))
@@ -726,13 +729,17 @@ func chromeTask(chromeContext0 context.Context, requestHeaders map[string]interf
 				}
 				return errors.Wrapf(err0, "url: %+v", url)
 			}
-			sl := 10 * time.Second
+			//if err := Type(ctx, "#year-input", "22hello world"); err != nil {
+			//	return errors.WithStack(err)
+			//}
+			/*sl := 10 * time.Second
 			l.Tracef("sleeping for %+v", sl)
-			time.Sleep(sl)
+			time.Sleep(sl)*/
 			resp, err := getAllDocumentHtmlWithRetryToWaitWhenLoaded(ctx, noIframeIndex)
 			if err != nil {
 				return errors.Wrapf(err, "for url %+v", url)
 			}
+			job.Ctx = &ctx
 			l.Tracef("ActionFunc2")
 			if len(*contentType) > 0 {
 				if !HtmlContentType(*contentType) {
@@ -744,6 +751,7 @@ func chromeTask(chromeContext0 context.Context, requestHeaders map[string]interf
 			*response = resp
 			return nil
 		}),
+		//job.Funcs...,
 	}
 }
 

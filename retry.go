@@ -27,6 +27,7 @@ func Do(iteration func() error, retryDelay, timeout time.Duration) error {
 				lastError = errors.Wrapf(err, "attempt: %+v", attempt)
 				li.Tracef("%+v, will retry after %s", lastError, retryDelay)
 				time.Sleep(retryDelay)
+				continue
 			}
 			li.Tracef("good")
 			done <- true

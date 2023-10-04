@@ -75,7 +75,9 @@ type Job struct {
 	DontReadBodyIfNotHtmlContentType           bool
 
 	Label string
-	Ctx   context.Context
+	Ctx   *context.Context
+
+	Funcs []chromedp.Action
 }
 
 func (j Job) String() string {
@@ -371,7 +373,7 @@ func Type(ctx context.Context, selector, text string) error {
 	if err := ScrollToBySelector(ctx, selector); err != nil {
 		return errors.WithStack(err)
 	}
-	js := fmt.Sprintf("$('%s').val('%s').trigger('input').trigger('keyup').focus()", selector, text)
+	js := fmt.Sprintf("$('%s').val('%s').trigger('input').trigger('keyup').focus(); 'ok';", selector, text)
 	var res string
 	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
 		return errors.WithStack(err)
@@ -382,7 +384,6 @@ func Type(ctx context.Context, selector, text string) error {
 func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Result, finalErr error) {
 	reuseContext := os.Getenv("REUSE_CHROME_CONTEXT") == "true"
 	t1 := time.Now()
-	reqTimeout := requestTimeout
 	lf := logrus.WithField("requestTimeout", requestTimeout)
 	lf.Infof("chrome req is starting")
 	defer func() {
@@ -402,7 +403,7 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 		}
 		lf.Tracef("this defer is done")
 	}()
-	go func() {
+	/*go func() {
 		timeoutPlusOneMinute := reqTimeout + time.Minute
 		select {
 		case <-done:
@@ -411,7 +412,7 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 			logrus.Errorf("too slow for job %+v and timeoutPlusOneMinute %+v", job, timeoutPlusOneMinute)
 		}
 	}()
-
+	*/
 	// create a timeout
 
 	defer func() {
@@ -473,7 +474,6 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 	}
 	lf.Tracef("job.ShowBrowser: %+v", job.ShowBrowser)
 	ctx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	job.Ctx = ctx
 	/*if !job.DontCloseBrowser {
 		defer cancelContext()
 	}*/
@@ -508,8 +508,11 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 		ctx,
 		chromedp.WithLogf(logrus.Tracef),
 	)
-	defer cancelNewContext()
+	if !job.DontCloseBrowser {
+		defer cancelNewContext()
+	}
 	choosedChromeContext := newContext
+
 	lf = lf.WithField("reuseContext", reuseContext)
 	if reuseContext {
 	} else {
@@ -548,6 +551,7 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 		defer cancelGenerateTimeoutContextWithCancel()
 	}
 	lf.Tracef("before chromedp.Run")
+	job.Ctx = &ctxChromeWithTimeout
 	if errR := chromedp.Run(ctxChromeWithTimeout,
 		chromeTask(ctxChromeWithTimeout, map[string]interface{}{"User-Agent": "Mozilla/5.0"}, &response, &statusCode, &contentType, &responseHeaders, job),
 	); errR != nil {
