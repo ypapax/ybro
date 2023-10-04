@@ -261,10 +261,11 @@ func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (final
 	defer func() {
 		cancel()
 	}()
-	fullUrl, err0 := getFullUrlChromeDP(ctx)
-	if err0 != nil {
-		return errors.Wrapf(err0, "time spent in : %+v, timeout %+v", time.Since(t1), runJsCrhomeDpRetryTimeout)
-	}
+	//fullUrl, err0 := getFullUrlChromeDP(ctx)
+	//if err0 != nil {
+	//	return errors.Wrapf(err0, "time spent in : %+v, timeout %+v", time.Since(t1), runJsCrhomeDpRetryTimeout)
+	//}
+	var fullUrl = ""
 	const errorIsCatchedStr = `error is catched`
 	tryCatchJs := fmt.Sprintf(`try {
 	%+v
@@ -274,7 +275,7 @@ func RunJsCrhomeDpRetry(ctx0 context.Context, js string, res interface{}) (final
 	if err1 := Do(func() error {
 		logrus.Tracef("running js %+v", yinline.InlineSep(js, " "))
 		if err44 := chromedp.EvaluateAsDevTools(tryCatchJs, &res).Do(ctx); err44 != nil {
-			return errors.Wrapf(err44, `for js: "%+v" and fullUrl: %+v`, js, fullUrl)
+			return errors.Wrapf(err44, `for js: "%+v" and fullUrl: %+v`, js, "")
 		}
 		errorIsCatched := func() bool {
 			resStr, ok := res.(string)

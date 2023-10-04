@@ -11,4 +11,5 @@ func TestHeadlessBrowser(t *testing.T) {
 	_, err := HeadlessBrowser(j, 30*time.Second)
 	r := require.New(t)
 	r.NoError(err)
+	r.NoError(Type(j.Ctx, "textarea", "hello world"))
 }
