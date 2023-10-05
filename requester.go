@@ -369,16 +369,13 @@ func ScrollToBySelector(ctx context.Context, selector string) error {
 	return nil
 }
 
-func Type(ctx context.Context, selector, text string) error {
+func Type(ctx context.Context, selector, text string, r *require.Assertions) {
 	if err := ScrollToBySelector(ctx, selector); err != nil {
-		return errors.WithStack(err)
+		r.NoError(err)
 	}
 	js := fmt.Sprintf("$('%s').val('%s').trigger('input').trigger('keyup').focus(); 'ok';", selector, text)
 	var res string
-	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+	r.NoError(RunJsCrhomeDpRetry(ctx, js, &res))
 }
 
 func ExpectTrueJs(ctx context.Context, js string, r *require.Assertions) error {
@@ -391,24 +388,30 @@ func ExpectTrueJs(ctx context.Context, js string, r *require.Assertions) error {
 	return nil
 }
 
-func TextContains(ctx context.Context, selector, contains string, r *require.Assertions) error {
-	js := fmt.Sprintf(`$("%+v").text().indexOf("%+v") == 0`, selector, contains)
-	if err := ExpectTrueJs(ctx, js, r); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+func Goto(u string, timeout time.Duration, showBrowser bool, r *require.Assertions) (context.Context, context.CancelFunc) {
+	j := &Job{HeadlessBrowser: true, ShowBrowser: showBrowser, DontCloseBrowser: true, Url: u}
+	_, err := HeadlessBrowser(j, timeout)
+	r.NoError(err)
+	r.NotNil(j.Ctx)
+	return *j.Ctx, j.CloseBro
 }
 
-func Click(ctx context.Context, selector string) error {
+func TextContains(ctx context.Context, selector, contains string, r *require.Assertions) {
+	js := fmt.Sprintf(`$("%+v").text().indexOf("%+v") == 0`, selector, contains)
+	if err := ExpectTrueJs(ctx, js, r); err != nil {
+		r.NoError(err)
+	}
+}
+
+func Click(ctx context.Context, selector string, r *require.Assertions) {
 	if err := ScrollToBySelector(ctx, selector); err != nil {
-		return errors.WithStack(err)
+		r.NoError(err)
 	}
 	js := fmt.Sprintf("$('%s')[0].click()", selector)
 	var res string
 	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
-		return errors.WithStack(err)
+		r.NoError(err)
 	}
-	return nil
 }
 
 func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Result, finalErr error) {
