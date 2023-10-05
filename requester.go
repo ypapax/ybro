@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -74,10 +75,9 @@ type Job struct {
 	WaitAfterChooseSelector                    time.Duration
 	DontReadBodyIfNotHtmlContentType           bool
 
-	Label string
-	Ctx   *context.Context
-
-	Funcs []chromedp.Action
+	Label    string
+	Ctx      *context.Context
+	CloseBro context.CancelFunc
 }
 
 func (j Job) String() string {
@@ -381,6 +381,36 @@ func Type(ctx context.Context, selector, text string) error {
 	return nil
 }
 
+func ExpectTrueJs(ctx context.Context, js string, r *require.Assertions) error {
+	var res bool
+	const expectedVal = true
+	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
+		return errors.WithStack(err)
+	}
+	r.Equal(expectedVal, res, "for js: %+v", js)
+	return nil
+}
+
+func TextContains(ctx context.Context, selector, contains string, r *require.Assertions) error {
+	js := fmt.Sprintf(`$("%+v").text().indexOf("%+v") == 0`, selector, contains)
+	if err := ExpectTrueJs(ctx, js, r); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func Click(ctx context.Context, selector string) error {
+	if err := ScrollToBySelector(ctx, selector); err != nil {
+		return errors.WithStack(err)
+	}
+	js := fmt.Sprintf("$('%s')[0].click()", selector)
+	var res string
+	if err := RunJsCrhomeDpRetry(ctx, js, &res); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Result, finalErr error) {
 	reuseContext := os.Getenv("REUSE_CHROME_CONTEXT") == "true"
 	t1 := time.Now()
@@ -552,6 +582,7 @@ func HeadlessBrowser(job *Job, requestTimeout time.Duration) (finalResult *Resul
 	}
 	lf.Tracef("before chromedp.Run")
 	job.Ctx = &ctxChromeWithTimeout
+	job.CloseBro = cancelGenerateTimeoutContextWithCancel
 	if errR := chromedp.Run(ctxChromeWithTimeout,
 		chromeTask(ctxChromeWithTimeout, map[string]interface{}{"User-Agent": "Mozilla/5.0"}, &response, &statusCode, &contentType, &responseHeaders, job),
 	); errR != nil {

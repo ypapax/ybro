@@ -25,5 +25,8 @@ func TestHeadlessBrowser(t *testing.T) {
 	_, err := HeadlessBrowser(j, 100*time.Second)
 	r.NoError(err)
 	r.NoError(Type(*j.Ctx, "#year-input", "hello world"))
-
+	r.NoError(Click(*j.Ctx, ".btn-primary"))
+	//r.NoError(ExpectTrueJs(*j.Ctx, `$("#submit-error").text().indexOf("Введите год, например ") == 0`, r))
+	r.NoError(TextContains(*j.Ctx, "#submit-error", "Введите год, например ", r))
+	j.CloseBro()
 }
